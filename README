@@ -1,0 +1,6 @@
+a ~branch of libc-bench from http://www.etalabs.net/compare_libcs.html / http://www.etalabs.net/libc-bench.html
+
+reworked rather heavily, and by no means necessarily either stable or usable, but........ eeeeeeeh.
+
+at the moment this is mostly for triaging performance ( or hopefully very rarily correctness ) issues when
+transitioning from building projects against glibc to building against musl-libc.
