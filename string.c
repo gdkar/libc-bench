@@ -84,10 +84,10 @@ size_t b_string_memcpy_tiny(void *dummy)
 }
 size_t b_string_memcpy_small(void *dummy)
 {
-	char *src = malloc(1024);
-  char *dst = malloc(1024);
+	char *src = malloc(1<<10);
+  char *dst = malloc(1<<10);
 	size_t i;
-  for(i = 0; i < (1<<1024); i++)
+  for(i = 0; i < (1<<10); i++)
     src[i] = i&255;
 
 	for (i=0; i<(1<<22); i++)

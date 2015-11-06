@@ -8,6 +8,8 @@
 #define STRINGIFY_(x) #x
 #define STRINGIFY(x) STRINGIFY_(x)
 
+int pipefd[2];
+FILE *pipefile[2];
 void print_stats(const char *label, const char *args, struct timespec tv0, size_t reps)
 {
 	FILE *f;
@@ -35,34 +37,66 @@ void print_stats(const char *label, const char *args, struct timespec tv0, size_
 		}
 	}
 	if (f) fclose(f);
-	printf("%s, %s, %s,  %ld. %.9ld, %zu, %E, %zu, %zu,  %zu\n",
-    STRINGIFY(CC), label, args,
-		(long)tv.tv_sec, (long)tv.tv_nsec,
-    reps, reps/((double)tv.tv_sec + (double)tv.tv_nsec * 1e-9),
-		vm_size, vm_rss, vm_priv_dirty);
+  double tv_time = tv.tv_sec + tv.tv_nsec * 1e-9;
+  fprintf(pipefile[1],"\"%s\":{ "
+                 "\"args\":%s,"
+                 "\"time\":%F,"
+                 "\"reps\":%zu,"
+                 "\"rate\":%F,"
+                 "\"virtual_size\":%zu,"
+                 "\"resident_size\":%zu,"
+                 "\"dirty_pages\":%zu },\n",
+
+    label,
+    args,
+    tv_time,
+    reps,
+    reps/tv_time,
+    vm_size,
+    vm_rss,
+    vm_priv_dirty
+    );
 }
 void print_header(FILE *file)
 {
-  fprintf(file,"compiler, function, args, time, reps, rate, virt, res, dirty\n");
+  fprintf(file, "{ \"%s\": { ",STRINGIFY(__CC__));
+}
+void print_footer(FILE *file)
+{
+  fprintf(file,"\n} }");
 }
 int run_bench(const char *label, const char *args, size_t (*bench)(void *), void *params)
 {
 	struct timespec tv0;
+  pipe(pipefd);
+  pipefile[0] = fdopen(pipefd[0],"r");
+  pipefile[1] = fdopen(pipefd[1],"w");
+  fflush(stdout);
 	pid_t p = fork();
 	if (p) {
+    fclose(pipefile[1]);
 		int status;
+    char buf[4096];
+    size_t read_size = 0;
+    do{
+        read_size = fread(buf,1,sizeof(buf),pipefile[0]);
+        if(read_size) fwrite(buf,1,read_size,stdout);
+    }while(read_size);
 		wait(&status);
+    fclose(pipefile[0]);
 		return status;
 	}
+  fclose(pipefile[0]);
 	clock_gettime(CLOCK_REALTIME, &tv0);
 	size_t reps = bench(params);
 	print_stats(label, args, tv0,reps);
+  fclose(pipefile[1]);
 	exit(0);
 }
 
 #define RUN(a, b) \
 	extern size_t (a)(void *); \
-	run_bench(#a, "(" #b ")", (a), (b))
+	run_bench(#a, STRINGIFY(b) , (a), (b))
 
 int main(int argc, char **argv)
 {
@@ -87,6 +121,8 @@ int main(int argc, char **argv)
     ARGS
 #undef output
   };
+  print_header(stdout);
+  fflush(stdout);
   for(int i = 1; i < argc; i ++ )
   {
     char *name = "";
@@ -113,7 +149,6 @@ int main(int argc, char **argv)
       }
     }
   }
-  print_header(stdout);
   if(bench_malloc)
   {
     RUN(b_malloc_sparse, 0);
@@ -176,5 +211,6 @@ int main(int argc, char **argv)
   	RUN(b_regex_search, "(a|b|c)*d*b");
     RUN(b_regex_search, "a{25}b");
 	}
+  print_footer(stdout);
 }
 

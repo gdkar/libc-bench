@@ -1,12 +1,10 @@
 SRCS = $(sort $(wildcard *.c))
 OBJS = $(SRCS:.c=.o)
 
-CC ?= gcc
 CFLAGS ?= -O3
-CFLAGS += -g -ggdb
+CFLAGS += -g -ggdb -D__CC__=${CC}
 LDFLAGS = -static
 LIBS += -lrt
-CFLAGS += -DCC=${CC}
 
 all: bin/libc-bench
 
