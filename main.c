@@ -35,7 +35,7 @@ void print_stats(const char *label, const char *args, struct timespec tv0, size_
 		}
 	}
 	if (f) fclose(f);
-	printf("%s, %s, %s,  %ld.%.9ld, %zu, %E, %zu, %zu,  %zu\n",
+	printf("%s, %s, %s,  %ld. %.9ld, %zu, %E, %zu, %zu,  %zu\n",
     STRINGIFY(CC), label, args,
 		(long)tv.tv_sec, (long)tv.tv_nsec,
     reps, reps/((double)tv.tv_sec + (double)tv.tv_nsec * 1e-9),

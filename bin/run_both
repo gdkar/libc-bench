@@ -1,0 +1,35 @@
+#! /usr/bin/env python
+from subprocess import check_output
+from os import spawnlpe, P_WAIT
+
+from posix import environ
+#spawnlpe(P_WAIT, ["make","clean","all"],{"CC":"musl-gcc"})
+musl_data = check_output(["./libc-bench"]).split("\n")
+musl_data = [ x.strip().split(",") for x in musl_data]
+spawnlpe(P_WAIT, ["make","clean","all"],{"LIBS":"-lpthread"})
+gcc_data = check_output(["./libc-bench"]).split("\n")
+gcc_data = [ x.strip().split(",") for x in gcc_data]
+
+musl_parsed = {}
+musl_columns = musl_data[1]
+for row in musl_data:
+    print(len(row))
+for elt in musl_columns: musl_parsed[elt]=list()
+for row in musl_data:
+    for (i,elt) in enumerate(row):
+        try:
+            musl_parsed[musl_columns[i]].append(float(elt))
+        except ValueError:
+            musl_parsed[musl_columns[i]].append(elt)
+print(musl_parsed)
+gcc_parsed = {}
+gcc_columns = gcc_data.pop(0)
+for elt in gcc_columns: gcc_parsed[elt]=list()
+for row in gcc_data:
+    for (elt,col) in zip(row,gcc_columns):
+        try:
+            gcc_parsed[col].append(float(elt))
+        except ValueError:
+            gcc_parsed[col].append(elt)
+
+print(gcc_parsed)

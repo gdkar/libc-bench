@@ -1,4 +1,3 @@
-
 SRCS = $(sort $(wildcard *.c))
 OBJS = $(SRCS:.c=.o)
 
@@ -9,15 +8,16 @@ LDFLAGS = -static
 LIBS += -lrt
 CFLAGS += -DCC=${CC}
 
-all: libc-bench
+all: bin/libc-bench
 
 clean:
-	rm -f $(OBJS) libc-bench
+	rm -f $(OBJS) bin/libc-bench
 
 test: all
-	./libc-bench
+	./bin/libc-bench
 
-libc-bench: $(OBJS)
+bin/libc-bench: $(OBJS)
+	@mkdir -p $(dir $@)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 %.o: %.c
